@@ -1,0 +1,44 @@
+stages:
+  - build
+  - test
+  - deploy
+
+make:
+  stage: build
+  script:
+    - mkdir -p cmake-build-debug
+    - cd cmake-build-debug
+    - cmake ..
+    - make
+  artifacts:
+    paths:
+      - cmake-build-debug/coordinator
+      - cmake-build-debug/worker
+    expire_in: 1 hrs
+    
+checkName:
+  stage: build
+  script: 
+    - bash -c '[ -s groupMembers.txt ]'
+
+runTest:
+  stage: test
+  script:
+    - bash -c '[ $(timeout 60 ./runTest.sh data/test.csv) == 5 ]'
+
+runWorkload:
+  stage: test
+  script:
+    - RESULT=$(timeout 60 ./testWorkload.sh https://db.in.tum.de/teaching/ws2223/clouddataprocessing/data/filelist.csv)
+    - bash -c "[ "$RESULT" == 275625 ]"
+
+testResilience:
+  stage: test
+  script:
+    - RESULT=$(timeout 60 ./testResilience.sh https://db.in.tum.de/teaching/ws2223/clouddataprocessing/data/filelist.csv)
+    - bash -c "[ "$RESULT" == 275625 ]"
+
+checkReport:
+  stage: deploy
+  script:
+    - bash -c '[ -f report.pdf ]'
