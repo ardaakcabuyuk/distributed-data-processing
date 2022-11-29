@@ -18,10 +18,10 @@ using namespace std::literals;
 #define BACKLOG 10   // how many pending connections queue will hold
 
 void sigchld_handler(int s) {
-    // waitpid() might overwrite errno, so we save and restore it:
-    int saved_errno = errno;
-    while(waitpid(-1, NULL, WNOHANG) > 0);
-    errno = saved_errno;
+   // waitpid() might overwrite errno, so we save and restore it:
+   int saved_errno = errno;
+   while(waitpid(-1, NULL, WNOHANG) > 0 || s);
+   errno = saved_errno;
 }
 
 void *get_in_addr(struct sockaddr *sa)
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
    //       recv() the results
    // Hint: Think about how you track which worker got what work
 
-   int PORT = atoi(argv[2]);
+   const char* PORT = argv[2];
    int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
    struct addrinfo hints, *servinfo, *p;
    struct sockaddr_storage their_addr; // connector's address information
@@ -132,14 +132,8 @@ int main(int argc, char* argv[]) {
          s, sizeof s);
       printf("server: got connection from %s\n", s);
 
-      if (!fork()) { // this is the child process
-         close(sockfd); // child doesn't need the listener
-         if (send(new_fd, "Hello, world!", 13, 0) == -1)
-               perror("send");
-         close(new_fd);
-         exit(0);
-      }
-      close(new_fd);  // parent doesn't need this
+      if (send(new_fd, "Hello, world!", 13, 0) == -1)
+         perror("send");
    }
 
    auto curlSetup = CurlGlobalSetup();
