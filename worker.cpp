@@ -52,13 +52,13 @@ unsigned long get_url_index(char* url) {
 ///    ./worker localhost 4242
 /// The worker then contacts the leader process on "localhost" port "4242" for work
 int main(int argc, char* argv[]) {
-   std::cout << "worker: start" << std::endl;
+   //std::cout << "worker: start" << std::endl;
    if (argc != 3) {
       std::cerr << "Usage: " << argv[0] << " <host> <port>" << std::endl;
       return 1;
    }
 
-   int PORT = atoi(argv[2]);
+   unsigned short int PORT = (unsigned short) atoi(argv[2]);
    int sock = 0, client_fd = -1;
    long valread;
    struct sockaddr_in serv_addr;
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
    int retries = 0;
    while (client_fd < 0) {
       if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-         printf("\n Socket creation error \n");
+      //   printf("\n Socket creation error \n");
          return -1;
       }
 
@@ -79,23 +79,23 @@ int main(int argc, char* argv[]) {
       // Convert IPv4 and IPv6 addresses from text to binary
       // form
       if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-         printf("\nInvalid address/ Address not supported. \n");
+      //   printf("\nInvalid address/ Address not supported. \n");
          return -1;
       }
 
-      std::cout << "worker: waiting for the server" << std::endl; 
+      //std::cout << "worker: waiting for the server" << std::endl; 
       //sleep(2);
    
       if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)))
          < 0) {
-         printf("\nworker: connection failed. retrying...\n");
+      //   printf("\nworker: connection failed. retrying...\n");
          retries++;
          close(sock);
          sleep(1);
       }
 
       if (retries > MAXCONNATTEMPTS) {
-         printf("\nworker: connection failed. max retries reached. exiting...\n");
+      //   printf("\nworker: connection failed. max retries reached. exiting...\n");
          return -1;
       }
    }
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
 
       buffer[valread] = '\0';
 
-      std::cout << "worker: received: " << buffer << std::endl;
+      //std::cout << "worker: received: " << buffer << std::endl;
       
       size_t result = 0;
       curl.setUrl(buffer);
@@ -137,10 +137,10 @@ int main(int argc, char* argv[]) {
       std::string result_with_index = std::to_string(url_index) + "," + std::to_string(result);
 
       //send result back to coordinator
-      if (send(sock, result_with_index.c_str(), result_with_index.length(), 0) == -1)
-         perror("send");
+      send(sock, result_with_index.c_str(), result_with_index.length(), 0);
+      //   perror("send");
 
-      std::cout << "worker: result: " << result << std::endl;
+      //std::cout << "worker: result: " << result << std::endl;
    }
 
    close(sock);

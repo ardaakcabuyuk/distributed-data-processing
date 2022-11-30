@@ -45,13 +45,13 @@ void *get_in_addr(struct sockaddr *sa) {
 /// Example:
 ///    ./coordinator http://example.org/filelist.csv 4242
 int main(int argc, char* argv[]) {
-   std::cout << "Coordinator started" << std::endl;
+   //std::cout << "Coordinator started" << std::endl;
    if (argc != 3) {
       std::cerr << "Usage: " << argv[0] << " <URL to csv list> <listen port>" << std::endl;
       return 1;
    }
 
-   int PORT = atoi(argv[2]);
+   unsigned short int PORT = (unsigned short) atoi(argv[2]);
    int opt = TRUE;  
    int master_socket, addrlen, new_socket, client_socket[64], 
          max_clients = 64, activity, sd;  
@@ -92,14 +92,14 @@ int main(int argc, char* argv[]) {
 
    //create a master socket 
    if((master_socket = socket(AF_INET , SOCK_STREAM , 0)) == 0) {  
-      perror("coordinator: socket failed");  
+   //   perror("coordinator: socket failed");  
       exit(EXIT_FAILURE);  
    } 
 
    //set coordinator socket to allow multiple connections , 
    //this is just a good habit, it will work without this 
    if(setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {  
-      perror("coordinator: setsockopt");  
+   //   perror("coordinator: setsockopt");  
       exit(EXIT_FAILURE);  
    }  
 
@@ -110,19 +110,19 @@ int main(int argc, char* argv[]) {
 
    //bind the socket to localhost port 8888 
    if (bind(master_socket, (struct sockaddr *)&address, sizeof(address)) < 0) {  
-      perror("coordinator: bind failed");  
+   //   perror("coordinator: bind failed");  
       exit(EXIT_FAILURE);  
    }  
-   printf("coordinator: listening on port %d \n", PORT); 
+   //printf("coordinator: listening on port %d \n", PORT); 
 
    if (listen(master_socket, BACKLOG) < 0) {  
-      perror("coordinator: listen");  
+   //   perror("coordinator: listen");  
       exit(EXIT_FAILURE);  
    }  
 
    //accept the incoming connection 
    addrlen = sizeof(address);  
-   puts("coordinator: waiting for connections...");  
+   //puts("coordinator: waiting for connections...");  
 
    unsigned url_idx = 0;
    unsigned received = 0;
@@ -153,25 +153,25 @@ int main(int argc, char* argv[]) {
       activity = select(max_sd + 1 , &readfds , NULL , NULL , NULL); 
 
       if ((activity < 0) && (errno != EINTR)) {  
-         printf("coordinator: select error");  
+      //   printf("coordinator: select error");  
       }  
 
       if (FD_ISSET(master_socket, &readfds)) {  
          if ((new_socket = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {  
-            perror("coordinator: accept");  
+         //   perror("coordinator: accept");  
             exit(EXIT_FAILURE);  
          }  
 
          //inform user of socket number - used in send and receive commands 
-         printf("New connection, socket fd: %d, IP: %s, port: %d\n", 
-            new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port)); 
+         // printf("New connection, socket fd: %d, IP: %s, port: %d\n", 
+         //    new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port)); 
 
          //send new connection next url 
          const char* next_url = urls[url_idx].c_str();
          if(send(new_socket, next_url, strlen(next_url), 0) == 0)  {  
-            perror("coordinator: send");  
+         //   perror("coordinator: send");  
          }  
-         std::cout << "coordinator: sent url: " << next_url << std::endl;
+         //std::cout << "coordinator: sent url: " << next_url << std::endl;
          worker_map[new_socket] = url_idx;
          url_idx++;
 
@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
             //if position is empty 
             if(client_socket[i] == 0) {  
                client_socket[i] = new_socket;  
-               printf("Adding to list of sockets as %d\n", i);                 
+               //printf("Adding to list of sockets as %d\n", i);                 
                break;  
             }  
          }  
@@ -196,8 +196,8 @@ int main(int argc, char* argv[]) {
             if ((valread = read(sd, buffer, MAXDATASIZE)) == 0) {  
                //Somebody disconnected , get his details and print 
                getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&addrlen);  
-               printf("Host disconnected, IP: %s, port: %d \n", 
-                  inet_ntoa(address.sin_addr) , ntohs(address.sin_port));  
+               //printf("Host disconnected, IP: %s, port: %d \n", 
+               //   inet_ntoa(address.sin_addr) , ntohs(address.sin_port));  
                
                if (worker_map.find(sd) != worker_map.end()) {
                   failed.push(worker_map[sd]);
@@ -214,9 +214,9 @@ int main(int argc, char* argv[]) {
                //of the data read 
                buffer[valread] = '\0';  
                std::string s(buffer);
-               unsigned long idx = stoul(s.substr(0, s.find(',')));
+               //unsigned long idx = stoul(s.substr(0, s.find(',')));
                unsigned long result = stoul(s.substr(s.find(',') + 1));
-               std::cout << "coordinator: received result: " << result << " for url: " << urls[idx] << std::endl;
+               //std::cout << "coordinator: received result: " << result << " for url: " << urls[idx] << std::endl;
                worker_map.erase(sd);
                total += result;
                received++;
@@ -225,18 +225,18 @@ int main(int argc, char* argv[]) {
                   //send new connection next url 
                   const char* next_url = urls[url_idx].c_str();
                   if(send(sd, next_url, strlen(next_url), 0) == 0)  {  
-                     perror("coordinator: send");  
+                     //perror("coordinator: send");  
                   }  
-                  std::cout << "coordinator: sent url: " << next_url << std::endl;
+                  //std::cout << "coordinator: sent url: " << next_url << std::endl;
                   worker_map[new_socket] = url_idx;
                   url_idx++;
                }
                else if (failed.size() > 0) {
                   const char* next_url = urls[failed.front()].c_str();
                   if(send(sd, next_url, strlen(next_url), 0) == 0)  {  
-                     perror("coordinator: send");  
+                     //perror("coordinator: send");  
                   }
-                  std::cout << "coordinator: sent url: " << next_url << std::endl;
+                  //std::cout << "coordinator: sent url: " << next_url << std::endl;
                   worker_map[new_socket] = failed.front();
                   failed.pop();
                }
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
    }
    //close socket
    close(master_socket);
-   std::cout << "total: " << total << std::endl;
+   std::cout << total << std::endl;
 
    return 0;
 }
